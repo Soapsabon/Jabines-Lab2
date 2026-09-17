@@ -1,26 +1,41 @@
--- Drop existing tables if they exist
-DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS inventory CASCADE;
+-- Drop existing tables (clean recreate)
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS inventory;
 
--- Create inventory table
+-- Inventory table
 CREATE TABLE inventory (
-    product_id VARCHAR(50) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    stock INT NOT NULL
+    product_id  VARCHAR(20) PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    stock       INTEGER NOT NULL DEFAULT 0
 );
 
--- Create orders table
+-- Orders table (one order can have many items now)
 CREATE TABLE orders (
-    order_id SERIAL PRIMARY KEY,
-    product_id VARCHAR(50) NOT NULL,
-    quantity INT NOT NULL,
-    status VARCHAR(50) NOT NULL,
-    reason VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    order_id    SERIAL PRIMARY KEY,
+    status      VARCHAR(20) NOT NULL CHECK (status IN ('CONFIRMED', 'REJECTED', 'CANCELLED')),
+    reason      VARCHAR(255),
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Seed inventory data
+-- Order items (line items per order)
+CREATE TABLE order_items (
+    item_id     SERIAL PRIMARY KEY,
+    order_id    INTEGER NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
+    product_id  VARCHAR(20) NOT NULL REFERENCES inventory(product_id),
+    quantity    INTEGER NOT NULL
+);
+
+-- Notifications (activity feed)
+CREATE TABLE notifications (
+    notification_id SERIAL PRIMARY KEY,
+    message          VARCHAR(255) NOT NULL,
+    created_at       TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Seed data
 INSERT INTO inventory (product_id, name, stock) VALUES
-    ('P100', 'Wireless Mouse', 25),
-    ('P200', 'Mechanical Keyboard', 10),
-    ('P300', 'USB-C Hub', 0);
+('P100', 'Wireless Mouse', 25),
+('P200', 'Mechanical Keyboard', 10),
+('P300', 'USB-C Hub', 0);
